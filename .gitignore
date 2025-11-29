@@ -1,7 +1,6 @@
+
+src/middlewares
+src/models 
+src/routes
+src/validations
 /node_modules
-src/controllers/
-src/models/
-src/routes/
-src/middlewares/
-src/validations/
-/database.js
