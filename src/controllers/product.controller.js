@@ -19,6 +19,27 @@ const getPublicProducts = async (req, res) => {
   }
 };
 
+// Obtener categorías únicas (público)
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct('categoria', { activo: true });
+    res.json({ success: true, data: categories });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener categorías', error: error.message });
+  }
+};
+
+// Obtener productos por categoría (público)
+const getProductsByCategory = async (req, res) => {
+  try {
+    const category = req.params.category;
+    const products = await Product.find({ categoria: category, activo: true }).sort({ createdAt: -1 });
+    res.json({ success: true, data: products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener productos por categoría', error: error.message });
+  }
+};
+
 // Obtener todos los productos (admin - todos)
 const getAllProducts = async (req, res) => {
   try {
@@ -189,6 +210,8 @@ module.exports = {
   getPublicProducts,
   getAllProducts,
   getProductById,
+  getCategories,
+  getProductsByCategory,
   createProduct,
   updateProduct,
   deleteProduct,

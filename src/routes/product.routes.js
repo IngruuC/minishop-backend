@@ -4,6 +4,8 @@ const {
   getPublicProducts,
   getAllProducts,
   getProductById,
+  getCategories,
+  getProductsByCategory,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -13,6 +15,8 @@ const authMiddleware = require('../middlewares/auth.middleware');
 
 // Rutas públicas
 router.get('/public', getPublicProducts);
+router.get('/public/categories', getCategories);
+router.get('/public/category/:category', getProductsByCategory);
 
 // Rutas protegidas (requieren autenticación)
 router.get('/', authMiddleware, getAllProducts);
