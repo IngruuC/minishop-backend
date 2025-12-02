@@ -22,9 +22,21 @@ const getPublicProducts = async (req, res) => {
 // Obtener categorías únicas (público)
 const getCategories = async (req, res) => {
   try {
-    const categories = await Product.distinct('categoria', { activo: true });
-    res.json({ success: true, data: categories });
+    // Usamos aggregation para normalizar (trim y lowercase) y devolver además el count
+    const pipeline = [
+      { $match: { activo: true, categoria: { $exists: true, $ne: '' } } },
+      { $project: { categoria: { $trim: { input: '$categoria' } } } },
+      { $group: { _id: { $toLower: '$categoria' }, name: { $first: '$categoria' }, count: { $sum: 1 } } },
+      { $sort: { count: -1, name: 1 } },
+      { $project: { _id: 0, category: '$name', slug: '$_id', count: 1 } }
+    ];
+
+    const categories = await Product.aggregate(pipeline);
+
+    // Si no hay resultados devolvemos un array vacío en data
+    res.json({ success: true, data: categories || [] });
   } catch (error) {
+    console.error('Error getCategories:', error);
     res.status(500).json({ success: false, message: 'Error al obtener categorías', error: error.message });
   }
 };
