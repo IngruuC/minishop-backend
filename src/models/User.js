@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
     default: null
+  },
+  googleId: {
+    type: String,
+    default: null
+  },
+  facebookId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
