@@ -19,6 +19,31 @@ const getPublicProducts = async (req, res) => {
   }
 };
 
+// Obtener productos en promoción (públicos)
+const getPromotionProducts = async (req, res) => {
+  try {
+    const ahora = new Date();
+    
+    const products = await Product.find({
+      activo: true,
+      'promocion.activa': true,
+      'promocion.fechaInicio': { $lte: ahora },
+      'promocion.fechaFin': { $gte: ahora }
+    }).sort({ createdAt: -1 });
+    
+    res.json({ 
+      success: true,
+      data: products 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Error al obtener productos en promoción',
+      error: error.message 
+    });
+  }
+};
+
 // Obtener categorías únicas (público)
 const getCategories = async (req, res) => {
   try {
@@ -105,6 +130,14 @@ const createProduct = async (req, res) => {
       });
     }
 
+    // Validación adicional para promoción de tipo porcentaje
+    if (req.body.promocion?.activa && req.body.promocion?.tipo === 'porcentaje' && req.body.promocion?.valor > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'El porcentaje de descuento no puede superar 100%'
+      });
+    }
+
     const product = new Product(req.body);
     await product.save();
 
@@ -134,6 +167,14 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Validación adicional para promoción de tipo porcentaje
+    if (req.body.promocion?.tipo === 'porcentaje' && req.body.promocion?.valor > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'El porcentaje de descuento no puede superar 100%'
+      });
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -157,6 +198,35 @@ const updateProduct = async (req, res) => {
       success: false,
       message: 'Error al actualizar producto',
       error: error.message 
+    });
+  }
+};
+
+// Activar/desactivar promoción de un producto
+const togglePromotion = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    product.promocion.activa = !product.promocion.activa;
+    await product.save();
+
+    res.json({
+      success: true,
+      message: `Promoción ${product.promocion.activa ? 'activada' : 'desactivada'} correctamente`,
+      data: product
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al cambiar estado de la promoción',
+      error: error.message
     });
   }
 };
@@ -247,12 +317,14 @@ const toggleProductStatus = async (req, res) => {
 
 module.exports = {
   getPublicProducts,
+  getPromotionProducts,
   getAllProducts,
   getProductById,
   getCategories,
   getProductsByCategory,
   createProduct,
   updateProduct,
+  togglePromotion,
   deleteProduct,
   deleteProductPermanently,
   toggleProductStatus

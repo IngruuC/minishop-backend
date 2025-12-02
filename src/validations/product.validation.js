@@ -23,7 +23,18 @@ const productValidation = (data) => {
       'any.required': 'El stock es obligatorio'
     }),
     categoria: Joi.string().max(50).optional(),
-    activo: Joi.boolean().optional()
+    activo: Joi.boolean().optional(),
+    // Validación de promoción
+    promocion: Joi.object({
+      activa: Joi.boolean().optional(),
+      tipo: Joi.string().valid('porcentaje', 'monto_fijo').optional(),
+      valor: Joi.number().min(0).when('activa', {
+        is: true,
+        then: Joi.number().min(0).required()
+      }).optional(),
+      fechaInicio: Joi.date().optional().allow(null),
+      fechaFin: Joi.date().greater(Joi.ref('fechaInicio')).optional().allow(null)
+    }).optional()
   });
 
   return schema.validate(data);
@@ -48,7 +59,17 @@ const productUpdateValidation = (data) => {
       'number.min': 'El stock no puede ser negativo'
     }),
     categoria: Joi.string().max(50).allow('').optional(),
-    activo: Joi.boolean().optional()
+    activo: Joi.boolean().optional(),
+    promocion: Joi.object({
+      activa: Joi.boolean().optional(),
+      tipo: Joi.string().valid('porcentaje', 'monto_fijo').optional(),
+      valor: Joi.number().min(0).optional(),
+      fechaInicio: Joi.date().optional().allow(null),
+      fechaFin: Joi.date().when('fechaInicio', {
+        is: Joi.exist(),
+        then: Joi.date().greater(Joi.ref('fechaInicio'))
+      }).optional().allow(null)
+    }).optional()
   }).min(1).messages({
     'object.min': 'Debe proporcionar al menos un campo para actualizar'
   });
