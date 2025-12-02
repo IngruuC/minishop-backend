@@ -1,5 +1,5 @@
 const Product = require('../models/Product');
-const { productValidation } = require('../validations/product.validation');
+const { productValidation, productUpdateValidation } = require('../validations/product.validation');
 
 // Obtener todos los productos (públicos - solo activos)
 const getPublicProducts = async (req, res) => {
@@ -22,7 +22,6 @@ const getPublicProducts = async (req, res) => {
 // Obtener categorías únicas (público)
 const getCategories = async (req, res) => {
   try {
-    // Usamos aggregation para normalizar (trim y lowercase) y devolver además el count
     const pipeline = [
       { $match: { activo: true, categoria: { $exists: true, $ne: '' } } },
       { $project: { categoria: { $trim: { input: '$categoria' } } } },
@@ -33,7 +32,6 @@ const getCategories = async (req, res) => {
 
     const categories = await Product.aggregate(pipeline);
 
-    // Si no hay resultados devolvemos un array vacío en data
     res.json({ success: true, data: categories || [] });
   } catch (error) {
     console.error('Error getCategories:', error);
@@ -98,7 +96,7 @@ const getProductById = async (req, res) => {
 // Crear producto
 const createProduct = async (req, res) => {
   try {
-    // Validar datos
+    // Validar datos con validación completa (todos los campos requeridos)
     const { error } = productValidation(req.body);
     if (error) {
       return res.status(400).json({ 
@@ -127,8 +125,8 @@ const createProduct = async (req, res) => {
 // Actualizar producto
 const updateProduct = async (req, res) => {
   try {
-    // Validar datos
-    const { error } = productValidation(req.body);
+    // Usar validación de UPDATE (campos opcionales)
+    const { error } = productUpdateValidation(req.body);
     if (error) {
       return res.status(400).json({ 
         success: false,
@@ -163,7 +161,7 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Eliminar producto (baja lógica)
+// Eliminar producto (baja lógica - cambia activo a false)
 const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
@@ -218,6 +216,35 @@ const deleteProductPermanently = async (req, res) => {
   }
 };
 
+// Toggle estado activo del producto
+const toggleProductStatus = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Producto no encontrado' 
+      });
+    }
+
+    product.activo = !product.activo;
+    await product.save();
+
+    res.json({ 
+      success: true,
+      message: `Producto ${product.activo ? 'activado' : 'desactivado'} correctamente`,
+      data: product 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Error al cambiar estado del producto',
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   getPublicProducts,
   getAllProducts,
@@ -227,5 +254,6 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
-  deleteProductPermanently
+  deleteProductPermanently,
+  toggleProductStatus
 };
