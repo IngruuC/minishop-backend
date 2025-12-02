@@ -6,8 +6,8 @@ const sendResetPasswordEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
   
   try {
-    await resend.emails.send({
-      from: 'MiniShop <onboarding@resend.dev>', // Email por defecto de Resend
+    const { data, error } = await resend.emails.send({
+      from: 'MiniShop <onboarding@resend.dev>',
       to: email,
       subject: 'Recuperar Contraseña - MiniShop',
       html: `
@@ -29,10 +29,18 @@ const sendResetPasswordEmail = async (email, resetToken) => {
         </div>
       `
     });
-    console.log('✅ Email enviado correctamente a:', email);
+
+    if (error) {
+      console.error('❌ Error de Resend:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Email enviado correctamente:', data);
+    return { success: true, data };
+    
   } catch (error) {
     console.error('❌ Error al enviar email:', error);
-    throw error;
+    return { success: false, error };
   }
 };
 
