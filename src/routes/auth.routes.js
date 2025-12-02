@@ -55,38 +55,4 @@ router.get('/google/callback',
   }
 );
 
-// ==================== FACEBOOK OAUTH ====================
-router.get('/facebook',
-  passport.authenticate('facebook', { 
-    scope: ['email'],
-    session: false
-  })
-);
-
-router.get('/facebook/callback',
-  passport.authenticate('facebook', { 
-    failureRedirect: `${process.env.FRONTEND_URL}/login?error=facebook_auth_failed`,
-    session: false
-  }),
-  (req, res) => {
-    try {
-      // Generar JWT token
-      const token = jwt.sign(
-        { 
-          id: req.user._id,
-          email: req.user.email,
-          rol: req.user.rol 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      // Redirigir al frontend con el token
-      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
-    } catch (error) {
-      console.error('Error en Facebook callback:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
-    }
-  }
-);
 module.exports = router;
